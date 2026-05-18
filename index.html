@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFFY 3.0 | Nothing Else Matters - Metallica</title>
+    
+    <!-- Fonts: Outfit (UI), Cinzel (Epic/Metal), Caveat (Diary/Acoustic), Share Tech Mono (Industrial) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Cinzel:wght@600;800;900&family=Caveat:wght@600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        metal: {
+                            bg: '#000000', /* Pitch Black */
+                            panel: '#0a0a0a', /* Deepest Grey */
+                            border: '#27272a', /* Brushed Metal */
+                            forge: '#ffffff', /* Stark White (Replaces Orange for Black Album Vibe) */
+                            steel: '#52525b', /* Dark Steel */
+                            white: '#f4f4f5'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        epic: ['Cinzel', 'serif'],
+                        diary: ['Caveat', 'cursive'],
+                        mono: ['"Share Tech Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #050505; color: #f4f4f5; overflow: hidden; 
+            font-family: 'Outfit', sans-serif; user-select: none; 
+        }
+
+        /* METALLIC & FORGE BACKGROUNDS */
+        .forge-glow {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background: radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.05) 0%, transparent 60%);
+        }
+        .brushed-metal {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.15;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            mix-blend-mode: screen;
+        }
+
+        /* SLIDE SYSTEM */
+        .slide-container { display: flex; flex-direction: column; overflow-y: auto; height: calc(100vh - 100px); scroll-behavior: smooth; position: relative; z-index: 10; }
+        .slide { display: none; opacity: 0; width: 100%; min-height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; transition: opacity 0.5s ease; }
+        .slide.active { display: flex; opacity: 1; animation: forgeFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .slide::before, .slide::after { content: ''; margin: auto; }
+
+        @keyframes forgeFade {
+            0% { opacity: 0; transform: translateY(20px); filter: saturate(0) brightness(0.5); }
+            100% { opacity: 1; transform: translateY(0); filter: saturate(1) brightness(1); }
+        }
+
+        /* UI ELEMENTS */
+        .metal-panel {
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid #27272a;
+            border-top: 2px solid #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        /* ACTIVE VOCABULARY (Match The Pick) */
+        .vocab-pick {
+            background: #000; color: #a1a1aa; padding: 12px 24px; border-radius: 2px;
+            font-family: 'Share Tech Mono', monospace; font-weight: bold; font-size: 14px;
+            text-transform: uppercase; cursor: pointer; transition: all 0.3s;
+            border: 1px solid #3f3f46; box-shadow: 4px 4px 0px rgba(0,0,0,0.9);
+            position: relative; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .vocab-pick:hover { transform: translateY(-2px); border-color: #ffffff; color: #fff; box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2); }
+        .vocab-pick.selected { background: #ffffff; color: #000; border-color: #ffffff; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4); transform: scale(1.05); }
+        .vocab-pick.used { opacity: 0.2; pointer-events: none; filter: grayscale(1); box-shadow: none; transform: scale(0.95); }
+
+        .forge-dropzone {
+            background: #050505; padding: 15px 15px 40px 15px; border-radius: 2px;
+            border: 1px dashed #3f3f46; color: #a1a1aa; cursor: pointer;
+            transition: all 0.4s ease; position: relative; overflow: hidden;
+            box-shadow: inset 0 5px 15px rgba(0,0,0,0.8);
+        }
+        .forge-dropzone:hover { border-color: #ffffff; background: rgba(255, 255, 255, 0.05); }
+        .forge-img { width: 100%; aspect-ratio: 1/1; background: #0a0a0a; border: 1px solid #27272a; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 15px; text-align: center; }
+        .forge-emoji { filter: opacity(0.6); transition: all 0.5s ease; color: #a1a1aa; font-family: 'Share Tech Mono', monospace; font-size: 13px; line-height: 1.6; }
+        
+        .drop-slot {
+            position: absolute; bottom: 8px; left: 10px; right: 10px; height: 26px;
+            border: 1px solid #3f3f46; border-radius: 2px; background: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #52525b;
+            text-transform: uppercase; transition: all 0.3s;
+        }
+        .forge-dropzone:hover .drop-slot { border-color: #ffffff; color: #ffffff; }
+
+        .forge-dropzone.matched { pointer-events: none; border: 1px solid #ffffff; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        .forge-dropzone.matched .forge-emoji { filter: opacity(1); transform: scale(1.05); color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .forge-dropzone.matched .drop-slot { border-color: #ffffff; background: #ffffff; color: #000; font-weight: bold; font-size: 12px; }
+
+        /* BUTTONS */
+        .btn-forge {
+            background: #ffffff; color: #000; font-family: 'Outfit', sans-serif; font-weight: 800;
+            padding: 14px 32px; border-radius: 2px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px;
+            border: 1px solid #ffffff; box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+        .btn-forge:hover { filter: brightness(0.8); box-shadow: 0 0 25px rgba(255,255,255,0.4); transform: scale(1.02); }
+
+        .btn-steel {
+            background: #18181b; color: #f4f4f5; font-family: 'Outfit', sans-serif; font-weight: 800;
+            padding: 14px 32px; border-radius: 2px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
+            border: 1px solid #3f3f46; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .btn-steel:hover { background: #27272a; border-color: #a1a1aa; transform: translateY(-2px); }
+
+        .rec-glow { animation: recPulse 1.5s infinite; }
+        @keyframes recPulse { 0% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.2); } 50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); } 100% { box-shadow: 0 0 5px rgba(255, 255, 255, 0.2); } }
+
+        .shake { animation: shake 0.4s both; border-color: #ffffff !important; color: #ffffff !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+        /* THE FORGE (Grammar Metaphor Lever) */
+        .lever-container { width: 140px; height: 60px; background: #0a0a0a; border: 2px solid #27272a; border-radius: 4px; position: relative; cursor: pointer; display: flex; align-items: center; padding: 0 5px; box-shadow: inset 0 5px 20px rgba(0,0,0,0.9); }
+        .lever-knob { width: 46px; height: 46px; background: #3f3f46; border-radius: 2px; z-index: 10; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: 0 0 10px rgba(0,0,0,0.8); border-top: 1px solid #71717a; border-bottom: 3px solid #18181b;}
+        .lever-state-left .lever-knob { transform: translateX(0); }
+        .lever-state-right .lever-knob { transform: translateX(80px); background: #ffffff; border-top-color: #f4f4f5; border-bottom-color: #a1a1aa; box-shadow: 0 0 20px rgba(255,255,255,0.5); }
+
+        /* LYRIC HACKER */
+        .lyric-hl { color: #71717a; cursor: pointer; border-bottom: 2px dotted #3f3f46; transition: 0.3s; padding: 0 4px; font-family: 'Caveat', cursive; font-size: 1.2em;}
+        .lyric-hl:hover { color: #f4f4f5; text-shadow: 0 0 10px rgba(255,255,255,0.4); border-bottom-color: #f4f4f5; }
+        .lyric-hl.active { color: #000; background: #ffffff; border-bottom: 2px solid #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.4); font-weight: bold; }
+
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .vinyl-spin { animation: spin 5s linear infinite; }
+        .paused { animation-play-state: paused; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .drawer-left { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .drawer-left.open { transform: translateX(0); }
+
+        /* GIANT BACKGROUND ICONS */
+        .bg-tape {
+            position: fixed; top: 10%; left: -5%; font-size: 25vw; color: #ffffff; opacity: 0.03;
+            z-index: 0; pointer-events: none; transform: rotate(-15deg);
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+        }
+        .bg-guitar {
+            position: fixed; bottom: 5%; right: -5%; font-size: 30vw; color: #ffffff; opacity: 0.03;
+            z-index: 0; pointer-events: none; transform: rotate(25deg);
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+        }
+        @media (max-width: 768px) {
+            .bg-tape { font-size: 50vw; top: 5%; left: -15%; }
+            .bg-guitar { font-size: 60vw; bottom: 10%; right: -20%; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative overflow-hidden flex flex-col">
+
+    <div class="brushed-metal"></div>
+    <div class="forge-glow"></div>
+    
+    <!-- BACKGROUND WATERMARKS -->
+    <i class="fa-solid fa-tape bg-tape"></i>
+    <i class="fa-solid fa-guitar bg-guitar"></i>
+
+    <!-- TEACHER TOOLSET -->
+    <aside id="teacher-panel" class="fixed top-0 left-0 h-full w-full md:w-[450px] bg-metal-bg border-r border-metal-border z-[60] drawer-left flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.9)] pb-[100px]">
+        <div class="p-6 border-b border-metal-border flex justify-between items-center bg-[#0a0a0a]">
+            <h2 class="font-epic text-xl text-metal-forge uppercase tracking-widest"><i class="fa-solid fa-fire-flame-curved mr-2"></i>The Forge</h2>
+            <button onclick="toggleTeacher()" class="text-gray-500 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <div class="p-6 border-b border-metal-border bg-[#111]">
+            <p class="text-[10px] font-mono text-gray-500 uppercase font-bold tracking-widest mb-4">Instant Applause</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="praise('METAL!')" class="bg-transparent border border-metal-forge text-metal-forge py-3 text-sm font-bold rounded hover:bg-metal-forge hover:text-black transition-colors font-epic tracking-widest uppercase">METAL</button>
+                <button onclick="praise('EPIC!')" class="bg-transparent border border-metal-steel text-metal-steel py-3 text-sm font-bold rounded hover:bg-metal-steel hover:text-black transition-colors font-epic tracking-widest uppercase">EPIC</button>
+            </div>
+        </div>
+
+        <div class="flex-1 p-6 relative flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-[10px] font-mono text-gray-500 uppercase font-bold tracking-widest">Teacher Notes</p>
+                <button onclick="document.getElementById('notes').value=''" class="text-xs text-metal-forge hover:text-white font-bold uppercase"><i class="fa-solid fa-trash mr-1"></i></button>
+            </div>
+            <textarea id="notes" class="flex-1 w-full bg-[#0a0a0a] border border-metal-border rounded p-4 text-white font-mono text-base leading-relaxed resize-none focus:outline-none focus:border-metal-forge shadow-inner" placeholder="Log B2 grammar mistakes (No matter what/where) here..."></textarea>
+        </div>
+    </aside>
+
+    <!-- PRAISE OVERLAY -->
+    <div id="praise-overlay" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <h1 id="praise-text" class="text-6xl md:text-8xl font-black font-epic text-white tracking-widest uppercase drop-shadow-[0_0_40px_rgba(234,88,12,0.8)] transform scale-50 transition-transform duration-500">METAL!</h1>
+    </div>
+
+    <!-- MAIN SLIDE CONTAINER -->
+    <main id="stage" class="flex-1 overflow-y-auto hide-scroll pb-32 slide-container">
+        
+        <!-- TRACK 01: COVER -->
+        <section class="slide active">
+            <div class="metal-panel p-10 max-w-4xl w-full flex flex-col md:flex-row items-center gap-12 relative overflow-visible">
+                <div class="relative w-64 h-64 md:w-80 md:h-80 shrink-0 group">
+                    <div class="absolute inset-y-0 right-0 w-full h-full rounded-full bg-[#050505] border-8 border-[#111] flex items-center justify-center vinyl-spin shadow-2xl transition-transform duration-700 group-hover:translate-x-12 z-10">
+                        <div class="w-24 h-24 rounded-full bg-[#0a0a0a] border-2 border-[#222] flex flex-col items-center justify-center shadow-inner relative z-10">
+                            <div class="w-4 h-4 rounded-full bg-black"></div>
+                            <span class="text-[8px] font-black font-epic mt-2 uppercase text-metal-steel opacity-50">THE BLACK ALBUM</span>
+                        </div>
+                        <div class="absolute inset-2 rounded-full border border-white/5"></div>
+                        <div class="absolute inset-6 rounded-full border border-white/5"></div>
+                    </div>
+                    <!-- The Black Album 90s Vibe Cover -->
+                    <div class="absolute inset-0 w-full h-full bg-[#0a0a0a] rounded shadow-[0_0_40px_rgba(255,255,255,0.1)] border border-[#222] z-20 transition-transform duration-700 group-hover:scale-105 flex items-center justify-center overflow-hidden">
+                        <img src="https://roquereverso.com/wp-content/uploads/2011/08/1313271187_3501.jpg?w=300" class="w-full h-full object-cover opacity-90 filter contrast-125 grayscale">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-black to-transparent opacity-50"></div>
+                    </div>
+                </div>
+                <div class="text-center md:text-left z-30">
+                    <span class="bg-metal-steel text-black px-3 py-1 font-bold text-[10px] font-mono tracking-widest rounded-sm mb-4 inline-block uppercase">B2 Upper-Intermediate</span>
+                    <h1 class="text-5xl md:text-7xl font-epic font-black leading-tight mb-2 tracking-tighter text-white uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">Nothing<br>Else Matters</h1>
+                    <p class="text-xl text-metal-forge font-mono uppercase tracking-[0.2em] mb-8 border-b border-[#333] pb-4 inline-block">Metallica</p>
+                    
+                    <div class="space-y-3 font-mono text-xs text-gray-400">
+                        <p><strong class="text-white">Grammar:</strong> Clauses of Concession (No matter...)</p>
+                        <p><strong class="text-white">Theme:</strong> Vulnerability, Judgment, Authenticity</p>
+                        <p><strong class="text-white">Mission:</strong> Stripping the Armor</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 02: BRIEFING -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 02: The Briefing</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">Unshakable Belief</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-left relative">
+                <div class="flex items-center gap-4 mb-8 border-b border-[#333] pb-6">
+                    <i class="fa-solid fa-link-slash text-3xl text-metal-steel"></i>
+                    <h3 class="font-epic font-bold text-2xl text-white uppercase tracking-widest">Grammar Focus</h3>
+                </div>
+                <div class="space-y-6 text-xl leading-relaxed text-gray-300 font-sans">
+                    <p>In this lesson, we will learn how to express unyielding conviction and ignore obstacles.</p>
+                    <div class="bg-[#050505] p-6 rounded border border-[#222] text-lg font-mono">
+                        We use <strong class="text-metal-forge font-bold">Clauses of Concession</strong> (No matter + wh- word) to state that something is true or will happen regardless of a difficulty.<br><br>
+                        <span class="text-white text-sm">"I will trust you, <u class="decoration-metal-forge">no matter what</u> they say."<br>"<u class="decoration-metal-forge">No matter how</u> far it is, I will go."</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 03: VIBE CHECK -->
+        <section class="slide">
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-8 text-center tracking-widest uppercase">The True Strength</h1>
+            <p class="text-xl font-sans text-gray-400 mb-12 text-center max-w-3xl">In modern society, what do you consider to be the truest sign of strength in a person?</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+                <button onclick="vibe(this, 'Shield')" class="metal-panel p-8 text-center hover:border-metal-steel transition-all btn-steel group">
+                    <i class="fa-solid fa-shield-halved text-4xl text-gray-600 group-hover:text-metal-steel mb-4 transition-colors"></i>
+                    <p class="text-xl font-epic font-bold text-white uppercase tracking-wider">The Shield</p>
+                    <p class="text-xs font-mono text-gray-500 mt-2 uppercase">Hiding emotions to survive</p>
+                </button>
+                <button onclick="vibe(this, 'Heart')" class="metal-panel p-8 text-center hover:border-metal-forge transition-all btn-steel group">
+                    <i class="fa-solid fa-heart-crack text-4xl text-gray-600 group-hover:text-metal-forge mb-4 transition-colors"></i>
+                    <p class="text-xl font-epic font-bold text-white uppercase tracking-wider">The Open Door</p>
+                    <p class="text-xs font-mono text-gray-500 mt-2 uppercase">Showing total vulnerability</p>
+                </button>
+                <button onclick="vibe(this, 'Fist')" class="metal-panel p-8 text-center hover:border-metal-steel transition-all btn-steel group">
+                    <i class="fa-solid fa-hand-fist text-4xl text-gray-600 group-hover:text-metal-steel mb-4 transition-colors"></i>
+                    <p class="text-xl font-epic font-bold text-white uppercase tracking-wider">Physical Toughness</p>
+                    <p class="text-xs font-mono text-gray-500 mt-2 uppercase">Never backing down</p>
+                </button>
+            </div>
+            <div id="vibe-hub" class="hidden mt-10 p-6 bg-[#0a0a0a] rounded border-l-4 border-metal-forge w-full max-w-5xl text-left shadow-[0_0_20px_rgba(234,88,12,0.15)]">
+                <p class="text-metal-forge font-mono text-[10px] font-bold uppercase mb-2 tracking-widest">Mic is Live</p>
+                <p class="text-xl font-sans text-white">Explain to your teacher! Is it harder to build a wall or to break it down?</p>
+            </div>
+        </section>
+
+        <!-- TRACK 04: TRIVIA -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 04: Heavy Metal History</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-10 tracking-widest text-center uppercase">The Backlash</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+                <div class="metal-panel p-8 flex flex-col justify-center border-l-4 border-metal-steel">
+                    <p class="text-xl font-sans text-gray-300 leading-relaxed mb-6">When Metallica released this emotional ballad in 1991, many hardcore thrash metal fans were furious. They accused the band of being "sell-outs" for showing vulnerability.</p>
+                    <p class="text-sm font-mono text-metal-forge uppercase">How did James Hetfield (the singer) respond to this criticism?</p>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <button onclick="checkTrivia(this, false)" class="metal-panel p-6 text-left hover:bg-[#18181b] transition-colors border border-[#27272a]">
+                        <span class="font-sans font-bold text-lg text-gray-400 uppercase tracking-wider">A. He apologized and promised the next album would be heavier</span>
+                    </button>
+                    <button onclick="checkTrivia(this, true)" class="metal-panel p-6 text-left hover:bg-[#18181b] transition-colors border border-[#27272a]">
+                        <span class="font-sans font-bold text-lg text-gray-400 uppercase tracking-wider">B. He ignored them, proving that true "metal" is doing whatever you want</span>
+                    </button>
+                    <button onclick="checkTrivia(this, false)" class="metal-panel p-6 text-left hover:bg-[#18181b] transition-colors border border-[#27272a]">
+                        <span class="font-sans font-bold text-lg text-gray-400 uppercase tracking-wider">C. He removed the song from their live shows for 10 years</span>
+                    </button>
+                </div>
+            </div>
+            <div id="trivia-hub" class="hidden mt-8 w-full max-w-5xl text-left bg-[#050505] p-6 border border-[#222] rounded shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                <p class="text-gray-300 font-sans text-lg">Correct! He didn't care. Hetfield said that true bravery isn't playing fast and loud; true bravery is exposing your heart to the world, <i>no matter what they say</i>.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 05: PRE-TEACHING (NEW REQUIREMENT) -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 05: Pre-Teaching</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase">Equip Your Tools</h1>
+            <p class="font-sans text-xl text-gray-400 mb-8 text-center max-w-3xl">Before we enter the forge and analyze the lyrics, we must understand the core emotional concepts of this masterpiece.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
+                <div class="metal-panel p-8 border-l-4 border-metal-steel">
+                    <h3 class="font-epic font-bold text-2xl text-white mb-4"><i class="fa-solid fa-shield-halved text-metal-steel mr-3"></i> Emotional Armor</h3>
+                    <p class="font-sans text-gray-300 text-lg leading-relaxed">In the 90s Heavy Metal scene, showing feelings was considered a weakness. Men built an "armor" of aggression and toughness to protect themselves from judgment.</p>
+                </div>
+                <div class="metal-panel p-8 border-l-4 border-metal-forge">
+                    <h3 class="font-epic font-bold text-2xl text-white mb-4"><i class="fa-solid fa-heart-crack text-metal-forge mr-3"></i> Vulnerability</h3>
+                    <p class="font-sans text-gray-300 text-lg leading-relaxed">The willingness to show your true emotions and risk being hurt. Hetfield realized that true courage is taking off the armor, not wearing it.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 06: ACTIVE VOCABULARY I (MATCH THE PICK) -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 06: Lexicon</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase drop-shadow-[0_0_10px_rgba(161,161,170,0.5)]">Load The Amps I</h1>
+            <p class="font-mono text-gray-400 text-xs mb-10 text-center uppercase tracking-widest">Select a guitar pick, then click a slot to plug it in.</p>
+
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-10 items-center justify-center">
+                <!-- Tapes (Picks) -->
+                <div class="flex flex-row md:flex-col gap-4 w-full md:w-1/4 justify-center">
+                    <button class="vocab-pick" id="pick-trust" onclick="pickVocab(this, 'TO TRUST')"><i class="fa-solid fa-guitar"></i> TO TRUST</button>
+                    <button class="vocab-pick" id="pick-judg" onclick="pickVocab(this, 'JUDGMENT')"><i class="fa-solid fa-guitar"></i> JUDGMENT</button>
+                </div>
+
+                <!-- Dropzones -->
+                <div class="flex flex-row gap-6 w-full md:w-3/4 justify-center">
+                    <div class="forge-dropzone w-48" onclick="dropVocab(this, 'TO TRUST', 'vocab-hub-1', 'To Trust', 'To firmly believe in the reliability, truth, or ability of someone.', 'Why is trust so hard to rebuild once it is broken?')">
+                        <div class="forge-img"><p class="forge-emoji">"To firmly believe in the reliability of someone, despite past traumas."</p></div>
+                        <div class="drop-slot">Plug in here</div>
+                    </div>
+                    <div class="forge-dropzone w-48" onclick="dropVocab(this, 'JUDGMENT', 'vocab-hub-1', 'Judgment', 'An opinion or conclusion, often critical, made by others about you.', 'Do you think social media has increased the fear of judgment?')">
+                        <div class="forge-img"><p class="forge-emoji">"A critical opinion or conclusion made by society, often blindly."</p></div>
+                        <div class="drop-slot">Plug in here</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="vocab-hub-1" class="hidden mt-10 w-full max-w-4xl text-left metal-panel p-6 border-l-4 border-metal-forge">
+                <p class="text-white font-epic font-black text-2xl mb-1 tracking-wider uppercase" id="hub-title-1">Word</p>
+                <p class="text-gray-300 font-sans text-lg mb-4" id="hub-def-1">Definition</p>
+                <div class="bg-[#050505] p-4 border border-[#222] rounded">
+                    <span class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-widest block mb-2">Discuss Now</span>
+                    <p class="text-white font-sans font-bold text-xl" id="hub-q-1">Question</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 07: DEBATE I -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 07: The Forge</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-10 tracking-widest text-center uppercase">Discussion I</h1>
+            
+            <div class="w-full max-w-4xl mx-auto">
+                <div class="metal-panel p-10 border-l-4 border-metal-steel shadow-[0_0_20px_rgba(161,161,170,0.1)]">
+                    <p class="font-epic font-bold text-3xl mb-4 tracking-wider text-white uppercase">The Double-Edged Sword</p>
+                    <p class="font-sans text-gray-300 text-xl leading-relaxed mb-6">"Trust I seek and I find in you."</p>
+                    <p class="font-sans font-bold text-metal-steel text-2xl">Is it more difficult to trust another person with your deepest secrets, or to trust yourself to make the right decisions?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 08: ACTIVE VOCABULARY II -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 08: Lexicon</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">Load The Amps II</h1>
+            <p class="font-mono text-gray-400 text-xs mb-10 text-center uppercase tracking-widest">Select a guitar pick, then click a slot to plug it in.</p>
+
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-10 items-center justify-center">
+                <!-- Tapes -->
+                <div class="flex flex-row md:flex-col gap-4 w-full md:w-1/4 justify-center">
+                    <button class="vocab-pick" id="pick-open" onclick="pickVocab(this, 'TO OPEN UP')"><i class="fa-solid fa-guitar"></i> TO OPEN UP</button>
+                    <button class="vocab-pick" id="pick-values" onclick="pickVocab(this, 'CORE VALUES')"><i class="fa-solid fa-guitar"></i> CORE VALUES</button>
+                </div>
+
+                <!-- Dropzones -->
+                <div class="flex flex-row gap-6 w-full md:w-3/4 justify-center">
+                    <div class="forge-dropzone w-48" onclick="dropVocab(this, 'TO OPEN UP', 'vocab-hub-2', 'To Open Up', 'To start talking freely about your feelings and secrets.', 'Why is opening up often seen as a sign of weakness by society?')">
+                        <div class="forge-img"><p class="forge-emoji">"To intentionally expose your deepest feelings and vulnerabilities to another person."</p></div>
+                        <div class="drop-slot">Plug in here</div>
+                    </div>
+                    <div class="forge-dropzone w-48" onclick="dropVocab(this, 'CORE VALUES', 'vocab-hub-2', 'Core Values', 'The fundamental beliefs of a person that dictate their behavior.', 'Should your core values ever change to please a partner?')">
+                        <div class="forge-img"><p class="forge-emoji">"The fundamental, unwavering beliefs that dictate your behavior and decisions."</p></div>
+                        <div class="drop-slot">Plug in here</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="vocab-hub-2" class="hidden mt-10 w-full max-w-4xl text-left metal-panel p-6 border-l-4 border-metal-forge">
+                <p class="text-white font-epic font-black text-2xl mb-1 tracking-wider uppercase" id="hub-title-2">Word</p>
+                <p class="text-gray-300 font-sans text-lg mb-4" id="hub-def-2">Definition</p>
+                <div class="bg-[#050505] p-4 border border-[#222] rounded">
+                    <span class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-widest block mb-2">Discuss Now</span>
+                    <p class="text-white font-sans font-bold text-xl" id="hub-q-2">Question</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 09: DEBATE II -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 09: The Forge</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-10 tracking-widest text-center uppercase">Discussion II</h1>
+            
+            <div class="w-full max-w-4xl mx-auto">
+                <div class="metal-panel p-10 border-l-4 border-metal-forge shadow-[0_0_20px_rgba(234,88,12,0.2)]">
+                    <p class="font-epic font-bold text-3xl mb-4 tracking-wider text-white uppercase">The Faceless "They"</p>
+                    <p class="font-sans text-gray-300 text-xl leading-relaxed mb-6">"Never care for what they do / Never care for what they know."</p>
+                    <p class="font-sans font-bold text-metal-forge text-2xl drop-shadow-[0_0_5px_rgba(234,88,12,0.5)]">Who is "They"? Why do humans care so deeply about the opinions of people who don't even matter to their lives?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 10: VISUAL MISSION -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 10: Pre-Screening</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">Visual Mission</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-center border-t-2 border-[#555]">
+                <i class="fa-solid fa-eye text-5xl text-metal-steel mb-8 drop-shadow-[0_0_10px_rgba(161,161,170,0.6)]"></i>
+                <p class="font-sans font-bold text-2xl md:text-3xl text-white leading-tight mb-8">"This is a massive heavy metal concert, usually filled with jumping and headbanging. However, notice the crowd during this song. People stand completely still, singing every word and holding up their phone lights. What does this contrast tell you?"</p>
+                <button onclick="document.getElementById('vis-hub').classList.remove('hidden'); shootConfetti();" class="btn-steel mt-4 text-sm">Got it!</button>
+            </div>
+            <div id="vis-hub" class="hidden mt-10 w-full max-w-4xl bg-[#050505] p-6 border border-[#222] text-left rounded shadow-lg">
+                <p class="font-mono text-gray-400 text-lg">Despite being at a loud and aggressive metal show, the audience unites in a quiet, vulnerable moment, turning the dark stadium into a beautiful ocean of lights.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 11: THE VIDEO -->
+        <section class="slide h-full">
+            <div class="flex justify-between items-end w-full max-w-5xl mb-6">
+                <div>
+                    <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-2">Track 11</h2>
+                    <h1 class="font-epic font-black text-3xl md:text-4xl text-white uppercase tracking-widest drop-shadow-[0_0_10px_rgba(161,161,170,0.4)]">Live Performance</h1>
+                </div>
+                <span class="bg-metal-forge text-black px-2 py-1 font-bold text-[10px] font-mono tracking-widest rounded-sm uppercase shadow-[0_0_10px_rgba(255,255,255,0.5)]">ON STAGE</span>
+            </div>
+            
+            <div class="w-full max-w-5xl overflow-hidden border-2 border-[#333] shadow-[0_0_40px_rgba(0,0,0,0.9)] relative aspect-video bg-black rounded">
+                <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/AAPmTd7nGrc?rel=0" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </section>
+
+        <!-- TRACK 12: FACT CHECK -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 12: Verification</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-10 tracking-widest text-center uppercase">Fact Check</h1>
+            
+            <div class="metal-panel p-10 w-full max-w-4xl mx-auto text-center border-t-2 border-[#333]">
+                <p class="font-sans text-2xl text-white mb-10 leading-relaxed">
+                    "Because this song is an emotional ballad, Metallica rarely plays it live to avoid upsetting their hardcore heavy metal fans."
+                </p>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="checkTF(this, false, 'tf-hub')" class="btn-steel">True</button>
+                    <button onclick="checkTF(this, true, 'tf-hub')" class="btn-steel">False</button>
+                </div>
+            </div>
+            <div id="tf-hub" class="hidden mt-8 w-full max-w-4xl bg-[#050505] p-6 border-l-4 border-metal-steel text-left shadow-[0_0_15px_rgba(161,161,170,0.1)]">
+                <p class="text-gray-300 text-lg font-sans">False! Despite James' initial fears, it became one of their most requested live songs in history, and the fans sing every single word.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 13: LYRIC HACKER I -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 13</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase">The Journal I</h1>
+            <p class="font-mono text-gray-500 text-xs mb-10 text-center uppercase tracking-widest">Click the dashed text</p>
+
+            <div class="w-full max-w-4xl mx-auto metal-panel p-10 md:p-14 text-center border-l-4 border-metal-forge">
+                <div class="space-y-6 text-3xl font-diary text-gray-300 leading-relaxed">
+                    <p>So close, <span class="lyric-hl" onclick="hackLyric(this, 'lh-1')">no matter how far</span></p>
+                    <p>Couldn't be much more <span class="lyric-hl" onclick="hackLyric(this, 'lh-2')">from the heart</span></p>
+                </div>
+
+                <div id="lh-1" class="hidden mt-10 bg-[#050505] p-6 rounded text-left border border-[#222]">
+                    <span class="font-mono text-metal-forge font-bold text-[10px] uppercase tracking-widest">Clause of Concession</span>
+                    <p class="text-white font-sans text-xl mt-2">Physical distance is irrelevant when the emotional connection is strong. The obstacle (distance) is dismissed.</p>
+                </div>
+                <div id="lh-2" class="hidden mt-10 bg-[#050505] p-6 rounded text-left border border-[#222]">
+                    <span class="font-mono text-metal-forge font-bold text-[10px] uppercase tracking-widest">Sincerity</span>
+                    <p class="text-white font-sans text-xl mt-2">It's a pure expression of feeling, stripping away all the heavy metal toughness.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 14: LYRIC HACKER II -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 14</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase">The Journal II</h1>
+
+            <div class="w-full max-w-4xl mx-auto metal-panel p-10 md:p-14 text-center border-l-4 border-metal-steel">
+                <div class="space-y-6 text-4xl font-diary text-gray-300 leading-relaxed">
+                    <p><span class="lyric-hl" onclick="hackLyric(this, 'lh-3')">Never opened myself</span> this way</p>
+                </div>
+
+                <div id="lh-3" class="hidden mt-10 bg-[#050505] p-6 rounded text-left border border-[#222]">
+                    <span class="font-mono text-metal-steel font-bold text-[10px] uppercase tracking-widest">Present Perfect</span>
+                    <p class="text-white font-sans text-xl mt-2">(I have) never opened myself. Used to describe a life experience up to the present moment. This is a first for him.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 15: LYRIC HACKER III -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 15</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase">The Journal III</h1>
+
+            <div class="w-full max-w-4xl mx-auto metal-panel p-10 md:p-14 text-center border-l-4 border-white">
+                <div class="space-y-6 text-3xl font-diary text-gray-300 leading-relaxed">
+                    <p>Life is ours, <span class="lyric-hl" onclick="hackLyric(this, 'lh-5')">we live it our way</span></p>
+                    <p>All these words I don't just say</p>
+                    <p><span class="lyric-hl" onclick="hackLyric(this, 'lh-6')">And nothing else matters</span></p>
+                </div>
+
+                <div id="lh-5" class="hidden mt-10 bg-[#050505] p-6 rounded text-left border border-[#222]">
+                    <span class="font-mono text-white font-bold text-[10px] uppercase tracking-widest">Autonomy</span>
+                    <p class="text-white font-sans text-xl mt-2">A declaration of independence. Rejecting societal expectations.</p>
+                </div>
+                <div id="lh-6" class="hidden mt-10 bg-[#050505] p-6 rounded text-left border border-[#222]">
+                    <span class="font-mono text-white font-bold text-[10px] uppercase tracking-widest">The Core Value</span>
+                    <p class="text-white font-sans text-xl mt-2">Once you find what is truly important (love, trust, authenticity), everything else (money, fame, judgment) becomes meaningless noise.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 16: THE GRAMMAR SWITCH (THE FORGE) -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 16: Mechanics</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase drop-shadow-[0_0_10px_rgba(234,88,12,0.3)]">Stripping The Armor</h1>
+            
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-12">
+                
+                <div class="flex flex-col items-center gap-4 shrink-0">
+                    <span class="font-epic font-bold text-lg text-metal-steel uppercase tracking-widest" id="lever-lbl-1">The Excuse</span>
+                    <div class="lever-container lever-state-left" id="grammar-lever" onclick="toggleLever()">
+                        <div class="lever-knob flex items-center justify-center"><i class="fa-solid fa-shield text-gray-500 text-xs"></i></div>
+                    </div>
+                    <span class="font-epic font-bold text-lg text-metal-forge uppercase tracking-widest opacity-30" id="lever-lbl-2">The Truth</span>
+                    <p class="text-[10px] font-mono text-gray-500 uppercase text-center mt-2">Click to break armor</p>
+                </div>
+
+                <div class="flex-1 metal-panel w-full p-10 min-h-[250px] flex items-center justify-center relative overflow-hidden">
+                    <!-- EXCUSE -->
+                    <div class="text-active absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 p-8" id="text-active" style="opacity: 1; transform: translateX(0);">
+                        <p class="font-mono text-2xl text-gray-400 mb-4 text-center">"It is very far, so I won't try."</p>
+                        <span class="font-mono text-gray-500 font-bold text-[10px] uppercase tracking-widest border border-gray-600 px-2 py-1 rounded bg-[#111]">Weakness</span>
+                    </div>
+
+                    <!-- TRUTH -->
+                    <div class="text-passive absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 p-8" id="text-passive" style="opacity: 0; transform: translateX(20px);">
+                        <p class="font-epic font-bold text-3xl text-white mb-4 text-center leading-relaxed">"I will try, <u class="text-metal-forge decoration-metal-forge">no matter how</u> far it is."</p>
+                        <span class="font-mono text-black text-[10px] font-bold uppercase tracking-widest border border-metal-forge bg-metal-forge px-2 py-1 rounded">Clause of Concession</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 17: SYNTAX BLUEPRINT -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 17: Structure</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">The Formula</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-5xl mx-auto flex flex-col items-center gap-8 border-t-2 border-[#333]">
+                <div class="flex flex-col md:flex-row gap-4 items-center w-full justify-center">
+                    <div class="bg-[#050505] p-6 text-center w-full md:w-4/12 border border-[#222] shadow-[0_0_15px_rgba(234,88,12,0.1)]">
+                        <span class="block text-metal-forge font-mono text-[10px] font-bold uppercase tracking-widest mb-2">The Phrase</span>
+                        <span class="text-2xl font-epic font-bold text-white uppercase">No matter</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-2xl text-gray-600 hidden md:block"></i>
+                    <i class="fa-solid fa-plus text-2xl text-gray-600 md:hidden"></i>
+                    <div class="bg-[#111] p-6 border border-[#333] rounded text-center w-full md:w-4/12">
+                        <span class="block text-metal-steel font-mono text-[10px] font-bold uppercase tracking-widest mb-2">Question Word</span>
+                        <span class="text-2xl font-epic font-bold text-white uppercase">What / Who / How / Where</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-2xl text-gray-600 hidden md:block"></i>
+                    <i class="fa-solid fa-plus text-2xl text-gray-600 md:hidden"></i>
+                    <div class="bg-[#050505] p-6 text-center w-full md:w-4/12 border border-[#222]">
+                        <span class="block text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest mb-2">Subject + Verb</span>
+                        <span class="text-2xl font-epic font-bold text-white uppercase">They say</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 18: SYSTEM CHECK I -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 18</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">System Patch I</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-center border-t-2 border-metal-forge">
+                <p class="font-sans text-3xl text-gray-300 mb-10 leading-relaxed">
+                    "I will trust you, <span class="text-white border-b-2 border-white px-4 pb-1"> _____ </span> happens."
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mx-auto">
+                    <button class="btn-forge" onclick="checkPatch(this, true, 'd1-hub')">
+                        no matter what
+                    </button>
+                    <button class="btn-forge" onclick="checkPatch(this, false, 'd1-hub')">
+                        even if what
+                    </button>
+                </div>
+                
+                <div id="d1-hub" class="hidden mt-8 font-mono text-metal-forge text-sm font-bold tracking-widest uppercase">> Correct! 'No matter what' means regardless of the events.</div>
+            </div>
+        </section>
+
+        <!-- TRACK 19: SYSTEM CHECK II -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 19</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">System Patch II</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-center border-t-2 border-metal-steel">
+                <p class="font-sans text-3xl text-gray-300 mb-10 leading-relaxed">
+                    "She is a true friend, no matter <span class="text-white border-b-2 border-white px-4 pb-1"> _____ </span>."
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl mx-auto">
+                    <button class="btn-steel" onclick="checkPatch(this, true, 'd2-hub')">
+                        who she is with
+                    </button>
+                    <button class="btn-steel" onclick="checkPatch(this, false, 'd2-hub')">
+                        who is she with
+                    </button>
+                </div>
+                
+                <div id="d2-hub" class="hidden mt-8 font-mono text-metal-steel text-sm font-bold tracking-widest uppercase">> Correct! After 'no matter who', we use standard affirmative word order (Subject + Verb), NOT question order.</div>
+            </div>
+        </section>
+
+        <!-- TRACK 20: NARRATIVE SEQUENCER -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 20: Narrative</h2>
+            <h1 class="font-epic font-black text-4xl md:text-5xl text-white mb-6 tracking-widest text-center uppercase">The Journey of Trust</h1>
+            <p class="font-mono text-gray-400 text-xs mb-10 text-center uppercase tracking-widest">Order the stages of vulnerability</p>
+
+            <div class="metal-panel p-10 w-full max-w-4xl mx-auto">
+                <div class="flex flex-col gap-4 w-full" id="timeline-container">
+                    <div class="bg-[#050505] border border-[#27272a] p-6 rounded text-xl font-sans flex items-center justify-between cursor-pointer hover:border-metal-forge transition-colors timeline-item text-gray-400" data-order="3" onclick="selectTimeline(this, '#ea580c')">
+                        <span>Opening up. ("Never opened myself this way")</span>
+                        <span class="timeline-number font-epic font-black text-white bg-metal-forge w-6 h-6 flex items-center justify-center text-sm hidden rounded-sm"></span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#27272a] p-6 rounded text-xl font-sans flex items-center justify-between cursor-pointer hover:border-metal-steel transition-colors timeline-item text-gray-400" data-order="1" onclick="selectTimeline(this, '#a1a1aa')">
+                        <span>Building the armor. (Hiding from the world)</span>
+                        <span class="timeline-number font-epic font-black text-[#111] bg-metal-steel w-6 h-6 flex items-center justify-center text-sm hidden rounded-sm"></span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#27272a] p-6 rounded text-xl font-sans flex items-center justify-between cursor-pointer hover:border-white transition-colors timeline-item text-gray-400" data-order="4" onclick="selectTimeline(this, '#ffffff')">
+                        <span>Ignoring judgment. ("And nothing else matters")</span>
+                        <span class="timeline-number font-epic font-black text-[#111] bg-white w-6 h-6 flex items-center justify-center text-sm hidden rounded-sm"></span>
+                    </div>
+                    <div class="bg-[#050505] border border-[#27272a] p-6 rounded text-xl font-sans flex items-center justify-between cursor-pointer hover:border-metal-forge transition-colors timeline-item text-gray-400" data-order="2" onclick="selectTimeline(this, '#ea580c')">
+                        <span>Finding connection. ("Trust I seek and I find in you")</span>
+                        <span class="timeline-number font-epic font-black text-white bg-metal-forge w-6 h-6 flex items-center justify-center text-sm hidden rounded-sm"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="timeline-hub" class="hidden mt-6 p-4 border-l-4 border-white bg-[#111] font-mono text-gray-400 text-[10px] font-bold w-full max-w-4xl mx-auto text-left tracking-widest uppercase">> The transformation is complete.</div>
+        </section>
+
+        <!-- TRACK 21: VOCAL BOOTH -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-steel text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 21: Pronunciation</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">Vocal Booth</h1>
+            
+            <div class="metal-panel p-10 md:p-14 w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between text-center gap-8 border-t-2 border-[#333]">
+                <div class="w-full md:w-5/12 bg-[#050505] p-8 rounded border border-[#27272a]">
+                    <span class="block text-gray-500 font-mono text-[10px] font-bold uppercase tracking-widest mb-4">Written (Formal)</span>
+                    <span class="text-2xl font-bold font-sans text-white tracking-widest uppercase">NO MATTER</span>
+                </div>
+                <div class="text-4xl text-metal-forge hidden md:block"><i class="fa-solid fa-microphone-lines"></i></div>
+                <div class="w-full md:w-5/12 bg-[#111] p-8 rounded shadow-[0_0_20px_rgba(234,88,12,0.15)] border border-metal-forge">
+                    <span class="block text-metal-forge font-mono text-[10px] font-bold uppercase tracking-widest mb-4">Spoken (Flap T)</span>
+                    <span class="text-3xl font-bold font-sans text-white tracking-widest uppercase"><span class="italic">NO MADDER</span></span>
+                </div>
+            </div>
+            <p class="text-gray-400 font-sans mt-10 text-center max-w-2xl text-xl">
+                In American English (and in rock singing), the double "T" is often pronounced like a soft "D" (Flap T). Practice saying: "No madder what."
+            </p>
+        </section>
+
+        <!-- TRACK 22: RAPID FIRE -->
+        <section class="slide" id="slide-rapid">
+            <h2 class="font-mono text-black bg-metal-steel px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 rounded-sm inline-block">Interrogation</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-6 tracking-widest text-center uppercase">Quick Fire</h1>
+            <p class="font-sans text-gray-400 text-xl mb-10 text-center max-w-2xl">Answer out loud using a "No matter" clause! You have <strong class="text-metal-forge">15 seconds</strong>!</p>
+
+            <div class="metal-panel p-10 rounded w-full max-w-4xl mx-auto text-center border-4 border-[#27272a] relative overflow-hidden" id="rap-container">
+                <div id="rap-bg-flash" class="absolute inset-0 bg-metal-forge opacity-0 pointer-events-none transition-opacity duration-300"></div>
+                <div class="relative z-10">
+                    <div class="text-5xl mb-6 text-gray-500 inline-block p-4"><i class="fa-solid fa-fire"></i></div>
+                    <p class="font-sans font-bold text-3xl md:text-4xl text-white mb-10 h-24 flex items-center justify-center" id="rap-q">"Would you change your core values to make a partner happy?"</p>
+                    
+                    <div class="w-full h-2 bg-black mb-8 overflow-hidden rounded border border-[#333]">
+                        <div id="rap-timer" class="h-full bg-metal-forge w-full transition-all linear shadow-[0_0_10px_rgba(234,88,12,0.8)]"></div>
+                    </div>
+
+                    <button id="rap-btn" onclick="startRapid()" class="btn-forge px-10 py-4 text-xl">Enter The Forge</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 23: VOICE NOTE -->
+        <section class="slide">
+            <h2 class="font-mono text-white bg-metal-forge px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 rounded-sm inline-block">Roleplay</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">The Vow</h1>
+
+            <div class="w-full max-w-[340px] mx-auto bg-black rounded border-4 border-[#27272a] h-[550px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative flex flex-col overflow-hidden">
+                <div class="bg-[#111] p-4 text-center border-b border-[#27272a] flex justify-between items-center">
+                    <span class="font-sans font-bold text-metal-forge text-xs animate-pulse"><i class="fa-solid fa-circle text-[8px] mr-1"></i>REC</span>
+                    <p class="font-sans font-bold text-white text-sm uppercase tracking-wider">Voice Memo</p>
+                    <i class="fa-solid fa-microphone-lines text-gray-500"></i>
+                </div>
+                
+                <div class="flex-1 p-8 flex flex-col justify-center text-center bg-[#050505] relative">
+                    <p class="font-sans font-bold text-gray-300 text-lg mb-6 leading-relaxed relative z-10">Record a short audio making a promise to yourself or someone you love.</p>
+                    <div class="bg-[#111] p-4 border border-[#27272a] rounded-sm relative z-10 text-left">
+                        <p class="font-mono text-gray-500 text-[10px] uppercase font-bold tracking-widest mb-2">Instructions:</p>
+                        <p class="font-sans text-sm text-white">Use a <strong class="text-metal-forge">Clause of Concession</strong> to show your conviction.</p>
+                        <p class="font-sans text-xs text-gray-500 mt-2">Ex: "I promise I will always be authentic, no matter what people say."</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#111] p-6 border-t border-[#27272a] flex flex-col items-center justify-center h-40 relative">
+                    <button id="vn-btn" onmousedown="startVN()" onmouseup="stopVN()" onmouseleave="stopVN()" ontouchstart="startVN()" ontouchend="stopVN()" class="w-20 h-20 rounded-full bg-metal-forge flex items-center justify-center text-white text-3xl transition-transform active:scale-95 border-4 border-[#1a1a1c] shadow-[0_0_20px_rgba(234,88,12,0.5)]">
+                        <i class="fa-solid fa-microphone"></i>
+                    </button>
+
+                    <div id="vn-overlay" class="absolute inset-0 bg-[#050505] flex flex-col items-center justify-center gap-4 opacity-0 pointer-events-none transition-opacity px-6 border-t border-[#222]">
+                        <span class="font-sans font-bold text-xl text-metal-forge uppercase tracking-widest rec-glow px-3 py-1 rounded">Recording</span>
+                        <div class="w-full h-1 bg-[#1a1a1c] overflow-hidden">
+                            <div id="vn-prog" class="h-full bg-metal-forge w-0"></div>
+                        </div>
+                        <span id="vn-time" class="font-mono font-bold text-metal-forge text-sm">0:00 / 0:45</span>
+                    </div>
+                </div>
+            </div>
+            <div id="vn-hub" class="hidden mt-6 text-center font-mono text-gray-500 text-xs font-bold tracking-widest uppercase animate-pulse">> Promise captured.</div>
+        </section>
+
+        <!-- TRACK 24: THE CROSSROADS -->
+        <section class="slide">
+            <h2 class="font-mono text-black bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-2 text-center rounded-sm inline-block">The Choice</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">The Dilemma</h1>
+
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-stretch h-full min-h-[400px]">
+                <div class="md:w-1/3 metal-panel p-8 text-center flex flex-col justify-center border-t-2 border-[#333]">
+                    <i class="fa-solid fa-scale-balanced text-5xl text-gray-500 mb-6"></i>
+                    <p class="font-sans font-bold text-xl text-white mb-6">If you had to choose a permanent way of living your life...</p>
+                    <p class="font-mono text-[10px] text-gray-500 font-bold uppercase tracking-widest">Choose and explain for 30s!</p>
+                </div>
+
+                <div class="md:w-2/3 flex flex-col gap-4 relative" id="cross-options">
+                    <button onclick="selectPath('metal-forge')" class="flex-1 bg-[#111] border border-[#27272a] rounded border-l-4 border-l-metal-forge flex flex-col justify-center p-8 text-left group hover:bg-[#18181b] transition-colors">
+                        <h3 class="font-epic font-black text-3xl text-white mb-2 group-hover:text-metal-forge transition-colors uppercase">Total Authenticity</h3>
+                        <p class="font-sans text-gray-400">Live completely vulnerable and true to yourself, even if it means society constantly judges and criticizes you.</p>
+                    </button>
+                    <button onclick="selectPath('metal-steel')" class="flex-1 bg-[#111] border border-[#27272a] rounded border-l-4 border-l-metal-steel flex flex-col justify-center p-8 text-left group hover:bg-[#18181b] transition-colors">
+                        <h3 class="font-epic font-black text-3xl text-white mb-2 group-hover:drop-shadow-[0_0_10px_rgba(161,161,170,0.8)] transition-all uppercase">The Perfect Armor</h3>
+                        <p class="font-sans text-gray-400">Wear an emotional armor. Everyone likes and respects you, but no one ever truly knows who you are inside.</p>
+                    </button>
+                </div>
+
+                <div class="md:w-2/3 hidden metal-panel rounded flex-col items-center justify-center p-10 border-t-4" id="cross-timer">
+                    <h3 class="font-epic font-black text-3xl text-white mb-6 tracking-widest uppercase" id="ct-title">Why?</h3>
+                    <div class="w-full h-2 bg-black rounded mb-8 overflow-hidden shadow-inner border border-[#333]">
+                        <div id="ct-bar" class="h-full w-full transition-all linear"></div>
+                    </div>
+                    <p class="font-mono text-5xl font-bold text-white" id="ct-clock">0:30</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 25: PLATINUM RECORD -->
+        <section class="slide">
+            <h2 class="font-mono text-metal-forge text-[10px] font-bold uppercase tracking-[0.3em] mb-2 text-center">Track 25</h2>
+            <h1 class="font-epic font-black text-4xl md:text-6xl text-white mb-10 tracking-widest text-center uppercase">Metal Legend</h1>
+            <div class="text-center relative z-20 flex flex-col items-center justify-center h-full">
+                <div class="relative mb-12">
+                    <div class="absolute inset-0 bg-metal-forge rounded-full blur-[80px] opacity-20 w-64 h-64"></div>
+                    <div class="w-72 h-72 rounded-full border-[10px] border-[#111] flex flex-col items-center justify-center bg-[#050505] shadow-[0_0_50px_rgba(234,88,12,0.3)] relative z-10 vinyl-spin">
+                        <div class="absolute inset-2 rounded-full border border-white/5"></div>
+                        <div class="absolute inset-6 rounded-full border border-white/5"></div>
+                        <div class="w-24 h-24 rounded-full bg-[#111] border-4 border-[#27272a] flex flex-col items-center justify-center shadow-inner z-20 overflow-hidden relative">
+                            <img src="https://roquereverso.com/wp-content/uploads/2011/08/1313271187_3501.jpg?w=300" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-screen grayscale">
+                            <div class="w-4 h-4 rounded-full bg-black relative z-30 border border-white/20 mt-2 hidden"></div>
+                        </div>
+                    </div>
+                </div>
+                <h1 class="text-5xl lg:text-7xl font-epic font-black mb-4 tracking-tighter text-white uppercase drop-shadow-[0_0_15px_rgba(234,88,12,0.5)]">Platinum Record</h1>
+                <p class="text-xl text-gray-400 font-sans font-bold mb-12">"The armor is off."</p>
+                <div class="flex gap-4">
+                    <button onclick="rate(1)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(2)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(3)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(4)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(5)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                </div>
+                <button onclick="location.reload()" class="mt-12 px-10 py-4 btn-forge">Eject Tape</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- PLAYER CONTROLS (Footer) -->
+    <footer class="h-[100px] bg-[#050505] border-t border-[#27272a] fixed bottom-0 w-full z-40 flex items-center justify-between px-6 lg:px-8 shadow-[0_-10px_30px_rgba(0,0,0,0.9)]">
+        <div class="flex items-center gap-4 w-1/3">
+            <div class="w-14 h-14 rounded bg-[#111] border border-[#333] hidden md:flex items-center justify-center shadow-[0_0_10px_rgba(0,0,0,0.8)] overflow-hidden">
+                <img src="https://roquereverso.com/wp-content/uploads/2011/08/1313271187_3501.jpg?w=300" alt="Cover" class="w-full h-full object-cover filter contrast-125 grayscale hover:grayscale-0 transition-all">
+            </div>
+            <div>
+                <h4 class="font-sans font-bold text-white text-lg tracking-wider uppercase">Nothing Else Matters</h4>
+                <p class="text-gray-500 text-[10px] font-mono uppercase font-bold tracking-widest">Wolffy B2</p>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center w-1/3 gap-1">
+            <div class="flex items-center gap-6 md:gap-8">
+                <button onclick="prevSlide()" id="btn-prev" class="text-gray-600 hover:text-white transition-colors disabled:opacity-30"><i class="fa-solid fa-backward-step text-xl"></i></button>
+                <button onclick="togglePlay(this)" class="w-12 h-12 rounded-full bg-[#111] border border-[#333] text-white flex items-center justify-center hover:border-metal-forge hover:text-metal-forge transition-all shadow-[0_0_10px_rgba(0,0,0,0.5)]"><i id="icon-play" class="fa-solid fa-play ml-1 hidden"></i><i id="icon-pause" class="fa-solid fa-pause"></i></button>
+                <button onclick="nextSlide()" id="btn-next" class="text-gray-600 hover:text-white transition-colors disabled:opacity-30"><i class="fa-solid fa-forward-step text-xl"></i></button>
+            </div>
+            <div class="w-full max-w-xs flex items-center gap-2">
+                <span class="text-[9px] font-mono text-gray-600" id="cur-step">01</span>
+                <div class="flex-1 h-1 bg-[#141414] rounded overflow-hidden">
+                    <div id="prog-bar" class="h-full bg-metal-forge w-0 transition-all duration-300"></div>
+                </div>
+                <span class="text-[9px] font-mono text-gray-600">25</span>
+            </div>
+        </div>
+
+        <div class="w-1/3 flex justify-end gap-4">
+            <button onclick="toggleTeacher()" class="bg-[#111] border border-[#333] w-10 h-10 md:w-12 md:h-12 rounded flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-fire-flame-curved text-sm"></i>
+            </button>
+            <button onclick="toggleFS()" class="bg-[#111] border border-[#333] w-10 h-10 md:w-12 md:h-12 rounded hidden md:flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-expand text-sm"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        let current = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function updateStage() {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[current].classList.add('active');
+            
+            document.getElementById('cur-step').innerText = (current + 1).toString().padStart(2, '0');
+            document.getElementById('prog-bar').style.width = `${(current / (slides.length - 1)) * 100}%`;
+            document.getElementById('btn-prev').disabled = current === 0;
+            document.getElementById('btn-next').disabled = current === slides.length - 1;
+            document.getElementById('stage').scrollTop = 0;
+            
+            clearInterval(rapInt); clearInterval(vnInt); clearInterval(crossInt);
+        }
+
+        function nextSlide() { if(current < slides.length - 1) { current++; updateStage(); } }
+        function prevSlide() { if(current > 0) { current--; updateStage(); } }
+        function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
+
+        let isPlaying = true;
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('icon-play').classList.toggle('hidden', isPlaying);
+            document.getElementById('icon-pause').classList.toggle('hidden', !isPlaying);
+            document.querySelectorAll('.vinyl-spin').forEach(el => el.classList.toggle('paused', !isPlaying));
+        }
+
+        function toggleTeacher() { document.getElementById('teacher-panel').classList.toggle('open'); }
+        
+        function praise(txt) {
+            toggleTeacher();
+            const ov = document.getElementById('praise-overlay');
+            const pt = document.getElementById('praise-text');
+            pt.innerText = txt;
+            ov.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => pt.classList.replace('scale-50', 'scale-100'), 50);
+            shootConfetti();
+            setTimeout(() => { 
+                pt.classList.replace('scale-100', 'scale-50'); 
+                ov.classList.add('opacity-0', 'pointer-events-none'); 
+            }, 2000);
+        }
+
+        function vibe(btn, text) {
+            document.getElementById('vibe-hub').classList.remove('hidden');
+            document.querySelectorAll('.btn-steel').forEach(b => {
+                b.classList.remove('border-metal-forge');
+                b.classList.add('border-metal-steel');
+            });
+            btn.classList.remove('border-metal-steel');
+            btn.classList.add('border-metal-forge');
+            shootConfetti(0.5);
+        }
+
+        function checkTrivia(btn, isCorrect) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.style.borderColor = '#ea580c';
+                btn.querySelector('span').classList.replace('text-gray-400', 'text-white');
+                document.getElementById('trivia-hub').classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake');
+                btn.style.borderColor = '#ea580c';
+            }
+        }
+
+        // --- NEW MECHANIC: MATCH THE PICK (Active Vocabulary) ---
+        let activeVocabWord = null;
+        let activeVocabBtn = null;
+
+        function pickVocab(btn, word) {
+            if(activeVocabBtn) activeVocabBtn.classList.remove('selected');
+            if(activeVocabWord === word) {
+                activeVocabWord = null;
+                activeVocabBtn = null;
+                return;
+            }
+            activeVocabWord = word;
+            activeVocabBtn = btn;
+            btn.classList.add('selected');
+        }
+
+        function dropVocab(zone, targetWord, hubId, title, def, question) {
+            if(zone.classList.contains('matched')) return; 
+            if(!activeVocabWord) {
+                zone.classList.add('shake');
+                setTimeout(() => zone.classList.remove('shake'), 400);
+                return;
+            }
+            if(activeVocabWord === targetWord) {
+                zone.classList.add('matched');
+                zone.querySelector('.drop-slot').innerText = targetWord;
+                activeVocabBtn.classList.remove('selected');
+                activeVocabBtn.classList.add('used');
+                activeVocabWord = null;
+                activeVocabBtn = null;
+
+                const hub = document.getElementById(hubId);
+                const titleNum = hubId.split('-')[2];
+                document.getElementById(`hub-title-${titleNum}`).innerText = title;
+                document.getElementById(`hub-def-${titleNum}`).innerText = def;
+                document.getElementById(`hub-q-${titleNum}`).innerText = ">> " + question;
+                hub.classList.remove('hidden');
+                shootConfetti();
+            } else {
+                zone.classList.add('shake');
+                setTimeout(() => zone.classList.remove('shake'), 400);
+            }
+        }
+        // ---------------------------------------------------------
+
+        function checkTF(btn, isCorrect, hub) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.style.background = '#a1a1aa';
+                btn.style.color = '#050505';
+                document.getElementById(hub).classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake');
+                btn.style.borderColor = '#ea580c';
+                btn.style.color = '#ea580c';
+            }
+        }
+
+        function hackLyric(el, hubId) {
+            el.closest('.slide').querySelectorAll('.lyric-hl').forEach(h => h.classList.remove('active'));
+            el.closest('.slide').querySelectorAll('[id^="lh-"]').forEach(h => h.classList.add('hidden'));
+            
+            el.classList.add('active');
+            document.getElementById(hubId).classList.remove('hidden');
+            shootConfetti(0.5);
+        }
+
+        // MECHANICS: THE FORGE (Grammar)
+        function toggleLever() {
+            const container = document.getElementById('grammar-lever');
+            const activeText = document.getElementById('text-active');
+            const passiveText = document.getElementById('text-passive');
+            const lbl1 = document.getElementById('lever-lbl-1');
+            const lbl2 = document.getElementById('lever-lbl-2');
+
+            if(container.classList.contains('lever-state-left')) {
+                container.classList.replace('lever-state-left', 'lever-state-right');
+                activeText.style.opacity = '0'; activeText.style.transform = 'translateX(-20px)';
+                passiveText.style.opacity = '1'; passiveText.style.transform = 'translateX(0)';
+                lbl1.classList.add('opacity-30'); lbl2.classList.remove('opacity-30');
+                shootConfetti();
+            } else {
+                container.classList.replace('lever-state-right', 'lever-state-left');
+                passiveText.style.opacity = '0'; passiveText.style.transform = 'translateX(20px)';
+                activeText.style.opacity = '1'; activeText.style.transform = 'translateX(0)';
+                lbl2.classList.add('opacity-30'); lbl1.classList.remove('opacity-30');
+            }
+        }
+
+        function checkPatch(btn, isCorrect, hub) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.style.color = '#fff';
+                document.getElementById(hub).classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake');
+            }
+        }
+
+        let tlClick = 0;
+        const tlExp = [1, 2, 3, 4];
+        function selectTimeline(btn, colorStr) {
+            if(btn.style.borderColor === 'rgb(255, 255, 255)' || btn.style.borderColor === 'rgb(234, 88, 12)' || btn.style.borderColor === 'rgb(161, 161, 170)') return;
+            const ord = parseInt(btn.getAttribute('data-order'));
+            
+            if(ord === tlExp[tlClick]) {
+                tlClick++;
+                btn.style.borderColor = colorStr;
+                btn.style.color = '#f8fafc';
+                const num = btn.querySelector('.timeline-number');
+                num.innerText = tlClick;
+                num.classList.remove('hidden');
+                if(tlClick === 4) { document.getElementById('timeline-hub').classList.remove('hidden'); shootConfetti(); }
+            } else {
+                btn.classList.add('shake');
+                setTimeout(() => {
+                    btn.classList.remove('shake');
+                }, 400);
+            }
+        }
+
+        const rapQ = [
+            "Would you change your core values to make a partner happy?",
+            "Will you follow your dreams if your parents disagree?",
+            "Can someone be a good person if they make mistakes?"
+        ];
+        let rapIdx = 0; let rapInt;
+        function startRapid() {
+            document.getElementById('rap-btn').style.display = 'none';
+            document.getElementById('rap-container').style.borderColor = '#ea580c';
+            document.getElementById('rap-container').classList.add('shadow-[0_0_30px_rgba(234,88,12,0.3)]');
+            runRapRound();
+        }
+        function runRapRound() {
+            if(rapIdx >= rapQ.length) {
+                document.getElementById('rap-q').innerText = "DONE!";
+                document.getElementById('rap-q').classList.replace('text-white', 'text-metal-forge');
+                document.getElementById('rap-timer').style.width = '0%';
+                shootConfetti(2);
+                return;
+            }
+            document.getElementById('rap-q').innerText = '"' + rapQ[rapIdx] + '"';
+            
+            const flash = document.getElementById('rap-bg-flash');
+            flash.classList.remove('opacity-0');
+            setTimeout(() => flash.classList.add('opacity-0'), 150);
+
+            let w = 100; const bar = document.getElementById('rap-timer');
+            clearInterval(rapInt);
+            rapInt = setInterval(() => {
+                w -= (100/150);
+                bar.style.width = w + '%';
+                if(w <= 0) { clearInterval(rapInt); rapIdx++; runRapRound(); }
+            }, 100);
+        }
+
+        let vnInt; let vnSecs = 45;
+        function startVN() {
+            const btn = document.getElementById('vn-btn');
+            btn.style.background = '#050505';
+            btn.style.color = '#ea580c';
+            btn.style.borderColor = '#ea580c';
+            document.getElementById('vn-overlay').classList.remove('opacity-0', 'pointer-events-none');
+            vnSecs = 45;
+            document.getElementById('vn-time').innerText = `0:${vnSecs.toString().padStart(2,'0')} / 0:45`;
+            
+            vnInt = setInterval(() => {
+                vnSecs--;
+                document.getElementById('vn-time').innerText = `0:${vnSecs.toString().padStart(2,'0')} / 0:45`;
+                document.getElementById('vn-prog').style.width = `${((45-vnSecs)/45)*100}%`;
+                if(vnSecs <= 0) stopVN();
+            }, 1000);
+        }
+        function stopVN() {
+            clearInterval(vnInt);
+            const btn = document.getElementById('vn-btn');
+            btn.style.background = '#ea580c';
+            btn.style.color = '#fff';
+            btn.style.borderColor = '#111';
+            document.getElementById('vn-overlay').classList.add('opacity-0', 'pointer-events-none');
+            if(vnSecs < 42) { document.getElementById('vn-hub').classList.remove('hidden'); shootConfetti(); }
+        }
+
+        let crossInt;
+        function selectPath(color) {
+            document.getElementById('cross-options').style.display = 'none';
+            const tmr = document.getElementById('cross-timer');
+            tmr.classList.replace('hidden', 'flex');
+            tmr.style.borderTopColor = color === 'metal-steel' ? '#a1a1aa' : '#ea580c';
+            tmr.style.boxShadow = `0 0 30px ${color === 'metal-steel' ? 'rgba(161,161,170,0.3)' : 'rgba(234,88,12,0.3)'}`;
+            
+            let w = 100; let secs = 30;
+            const bar = document.getElementById('ct-bar');
+            bar.style.backgroundColor = color === 'metal-steel' ? '#a1a1aa' : '#ea580c';
+            
+            crossInt = setInterval(() => {
+                w -= (100/300); bar.style.width = w + '%';
+                if(w % (100/30) < (100/300)) { secs--; document.getElementById('ct-clock').innerText = `0:${secs.toString().padStart(2,'0')}`; }
+                if(w <= 0) { 
+                    clearInterval(crossInt); 
+                    document.getElementById('ct-title').innerText = "DONE!"; 
+                    document.getElementById('ct-clock').style.color = color === 'metal-steel' ? '#a1a1aa' : '#ea580c';
+                    shootConfetti(); 
+                }
+            }, 100);
+        }
+
+        function rate(stars) {
+            document.querySelectorAll('.star').forEach((s, i) => {
+                if(i < stars) s.classList.remove('opacity-30', 'grayscale');
+                else s.classList.add('opacity-30', 'grayscale');
+            });
+            shootConfetti();
+        }
+
+        function shootConfetti(sec=1) {
+            if (typeof confetti !== 'function') return;
+            var duration = sec * 1000; var end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ea580c', '#a1a1aa', '#ffffff'] });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ea580c', '#a1a1aa', '#ffffff'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        window.onload = updateStage;
+    </script>
+</body>
+</html>
